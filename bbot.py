@@ -291,14 +291,16 @@ for event in longpoll.listen():
             
             print(f"📩 Сообщение от {user_id}: {message_text}")
             
-            # Обработка команд (без приветствия)
-            if message_text in ["помощь", "help", "?", "❓ Помощь"]:
+            # Очищаем текст от лишних пробелов и приводим к нижнему регистру
+            clean_text = message_text.lower().strip()
+
+            if "помощь" in clean_text or "help" in clean_text:
                 handle_help(user_id)
-            
-            elif message_text in ["правила", "rules", "📚 Правила"]:
+
+            elif "правил" in clean_text or "rules" in clean_text:
                 handle_rules(user_id)
-            
-            elif message_text in ["тест", "test", "📝 Тест"]:
+
+            elif "тест" in clean_text or "test" in clean_text:
                 handle_test(user_id)
             
             elif "проверь новость" in message_text or message_text in ["фейк", "новость"]:
