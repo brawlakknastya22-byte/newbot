@@ -292,13 +292,13 @@ for event in longpoll.listen():
             print(f"📩 Сообщение от {user_id}: {message_text}")
             
             # Обработка команд (без приветствия)
-            if message_text in ["помощь", "help", "?"]:
+            if message_text in ["помощь", "help", "?", "❓ Помощь"]:
                 handle_help(user_id)
             
-            elif message_text in ["правила", "rules"]:
+            elif message_text in ["правила", "rules", "📚 Правила"]:
                 handle_rules(user_id)
             
-            elif message_text in ["тест", "test"]:
+            elif message_text in ["тест", "test", "📝 Тест"]:
                 handle_test(user_id)
             
             elif "проверь новость" in message_text or message_text in ["фейк", "новость"]:
