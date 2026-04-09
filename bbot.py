@@ -139,8 +139,8 @@ def send_message(user_id, message, keyboard=None):
     }
     if keyboard:
         params["keyboard"] = keyboard
-    vk.method("messages.send", params)
-
+    
+    vk.messages.send(**params)
 def create_main_keyboard():
     keyboard = {
         "one_time": False,
