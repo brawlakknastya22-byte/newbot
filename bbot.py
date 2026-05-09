@@ -504,23 +504,75 @@ def create_quiz_keyboard(options):
 # ==================================================
 
 def handle_fake_check(user_id):
-    news = random.choice(FAKE_NEWS_DB)
-    user_states[user_id] = {"module": "fake_check", "news": news}
-    send_message(user_id, f"📰 *Проверь новость*\n\n{news['text']}\n\nПравда или фейк?", create_yes_no_keyboard())
+    # Перемешиваем список новостей
+    shuffled_news = FAKE_NEWS_DB.copy()
+    random.shuffle(shuffled_news)
+    
+    user_states[user_id] = {
+        "module": "fake_check",
+        "news_list": shuffled_news,  # все новости в случайном порядке
+        "current_idx": 0,
+        "score": 0,
+        "total": len(shuffled_news)
+    }
+    send_next_fake_question(user_id)
+
+def send_next_fake_question(user_id):
+    state = user_states.get(user_id, {})
+    news_list = state.get("news_list", [])
+    current = state.get("current_idx", 0)
+    total = state.get("total", 0)
+    
+    if current < total:
+        news = news_list[current]
+        state["current_news"] = news
+        user_states[user_id] = state
+        
+        send_message(
+            user_id, 
+            f"📰 *Проверь новость* ({current + 1} из {total})\n\n{news['text']}\n\nПравда или фейк?", 
+            create_yes_no_keyboard()
+        )
+    else:
+        # Тест окончен, показываем результат
+        score = state.get("score", 0)
+        percent = (score / total) * 100
+        result = f"🎉 *Тест завершён!*\n\nРезультат: {score} из {total} ({percent:.0f}%)\n"
+        
+        if percent >= 80:
+            result += "🏆 Отлично! Ты отлично разбираешься в фейках!"
+        elif percent >= 50:
+            result += "📚 Неплохо! Пройди тест ещё раз, чтобы закрепить знания."
+        else:
+            result += "💪 Стоит потренироваться! Внимательнее читай объяснения после ответов."
+        
+        send_message(user_id, result, create_main_keyboard())
+        user_states.pop(user_id, None)
 
 def handle_fake_answer(user_id, answer):
     state = user_states.get(user_id, {})
-    news = state.get("news", {})
+    current_news = state.get("current_news", {})
+    current_idx = state.get("current_idx", 0)
+    score = state.get("score", 0)
+    
+    # Проверяем ответ
     user_is_fake = "фейк" in answer.lower() or "❌" in answer
-    is_correct = (user_is_fake == news.get("is_fake"))
+    is_correct = (user_is_fake == current_news.get("is_fake", False))
     
+    # Отправляем обратную связь
     if is_correct:
-        response = f"✅ *Правильно!*\n\n{news.get('explanation', '')}"
+        send_message(user_id, f"✅ *Правильно!*\n\n{current_news.get('explanation', '')}")
+        score += 1
     else:
-        response = f"❌ *Неправильно!*\n\n{news.get('explanation', '')}"
+        send_message(user_id, f"❌ *Неправильно!*\n\n{current_news.get('explanation', '')}")
     
-    send_message(user_id, response, create_main_keyboard())
-    user_states.pop(user_id, None)
+    # Переходим к следующей новости
+    state["score"] = score
+    state["current_idx"] = current_idx + 1
+    user_states[user_id] = state
+    
+    # Отправляем следующую новость или завершаем
+    send_next_fake_question(user_id)
 
 def handle_law_case(user_id):
     case = random.choice(LAW_CASES_DB)
