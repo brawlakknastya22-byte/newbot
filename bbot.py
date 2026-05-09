@@ -4,6 +4,7 @@ import os
 import random
 import json
 import random
+import time
 
 # ==================================================
 # ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (настройки на хостинге)
@@ -642,6 +643,7 @@ def handle_test_answer(user_id, answer):
         
         state["current_q"] = current + 1
         user_states[user_id] = state
+        time.sleep(1.5)
         send_test_question(user_id)
 
 # ==================================================
