@@ -3,6 +3,7 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 import os
 import random
 import json
+import random
 
 # ==================================================
 # ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (настройки на хостинге)
@@ -533,16 +534,19 @@ def handle_help(user_id):
 
 • 🛡️ Проверь новость — распознай фейк
 • ⚖️ Юридический кейс — правовая ситуация
-• 📚 Правила — 20 правил безопасности
+• 📚 Правила — 15 правил безопасности
 • 📝 Тест — проверь знания
 
 Бот по медиаграмотности и правовой культуре."""
     send_message(user_id, help_text, create_main_keyboard())
 
 def handle_test(user_id):
+    shuffled_questions = TEST_QUESTIONS.copy()
+    random.shuffle(shuffled_questions)
+    
     user_states[user_id] = {
         "module": "test",
-        "questions": TEST_QUESTIONS.copy(),
+        "questions": shuffled_questions,
         "current_q": 0,
         "score": 0
     }
