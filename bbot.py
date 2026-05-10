@@ -4,7 +4,7 @@ import os
 import random
 import json
 import time
-
+import requests
 # ==================================================
 # ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (настройки на хостинге)
 # ==================================================
@@ -130,6 +130,11 @@ LAW_CASES_DB = [
         "text": "Ты опубликовал в соцсети фото одноклассника без его согласия. Он требует удалить. Кто прав?",
         "correct": "Одноклассник",
         "explanation": "⚖️ Статья 152.1 ГК РФ: публикация фото без согласия нарушает закон."
+    },
+    {
+        "text": "Ты решил записать ответы на экзамене на диктофон. Это законно?",
+        "correct": "Нет, это нарушает правила проведения экзамена",
+        "explanation": "Хотя это не уголовное преступление, на экзамене запрещено использовать любые записывающие устройства. За это могут удалить с экзамена и аннулировать результаты."
     },
     {
         "text": "Тебе пришло сообщение: «Ваш аккаунт ВК будет заблокирован, перейдите по ссылке и подтвердите пароль». Что делать?",
@@ -366,6 +371,21 @@ def send_message(user_id, message, keyboard=None):
         params["keyboard"] = keyboard
     
     vk.messages.send(**params)
+
+def save_result_to_sheet(user_id, score, total, percent):
+    """Сохраняет результат теста в Google Таблицу"""
+    url = "https://script.google.com/macros/s/AKfycbyG1343QvshYjvX9wh6zX1aWgqRYwxTGWiHhcl1uaGDQeJfeD2oF9vRM5p_5ZSiqp0bLQ/exec"
+    data = {
+        "user_id": user_id,
+        "score": score,
+        "total": total,
+        "percent": percent
+    }
+    try:
+        requests.post(url, json=data, timeout=5)
+        print(f"✅ Результат сохранён: {user_id} | {score}/{total} ({percent:.0f}%)")
+    except Exception as e:
+        print(f"❌ Ошибка сохранения: {e}")
 def create_main_keyboard():
     keyboard = {
         "one_time": False,
@@ -529,6 +549,9 @@ def send_test_question(user_id):
         percent = (score / total) * 100
         result = f"🎉 *Тест завершён!*\n\nРезультат: {score} из {total} ({percent:.0f}%)"
         send_message(user_id, result, create_main_keyboard())
+    
+        save_result_to_sheet(user_id, score, total, percent)
+    
         user_states.pop(user_id, None)
 
 def handle_test_answer(user_id, answer):
