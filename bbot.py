@@ -525,7 +525,7 @@ def send_next_fake_question(user_id):
         result = f"🎉 *Тест завершён!*\n\nРезультат: {score} из {total} ({percent:.0f}%)\n"
         
         if percent >= 80:
-            result += "🏆 Отлично! Ты отлично разбираешься в фейках!"
+            result += "🏆 Отлично! Ты хорошо разбираешься в фейках!"
         elif percent >= 50:
             result += "📚 Неплохо! Пройди тест ещё раз, чтобы закрепить знания."
         else:
@@ -590,6 +590,7 @@ def handle_test(user_id):
     send_test_question(user_id)
 
 def send_test_question(user_id):
+    print(f"🔍 send_test_question вызвана для {user_id}")
     state = user_states.get(user_id, {})
     questions = state.get("questions", [])
     current = state.get("current_q", 0)
@@ -607,9 +608,12 @@ def send_test_question(user_id):
         user_states.pop(user_id, None)
 
 def handle_test_answer(user_id, answer):
+    print(f"🔍 handle_test_answer вызвана для {user_id}, ответ: {answer}")
     state = user_states.get(user_id, {})
     questions = state.get("questions", [])
     current = state.get("current_q", 0)
+    
+    print(f"🔍 Текущий вопрос: {current}, всего: {len(questions)}")
     
     if current < len(questions):
         q = questions[current]
@@ -625,10 +629,13 @@ def handle_test_answer(user_id, answer):
         
         state["current_q"] = current + 1
         user_states[user_id] = state
-        
+
+        print(f"🔍 Переход к вопросу {current + 1}")
         time.sleep(1.5)
         send_test_question(user_id)
-
+    else:
+        print(f"🔍 Тест должен был завершиться, но current = {current} >= {len(questions)}")
+        
 # ==================================================
 # ОСНОВНОЙ ЦИКЛ
 # ==================================================
