@@ -373,7 +373,7 @@ def send_message(user_id, message, keyboard=None):
     vk.messages.send(**params)
 
 def save_result_to_sheet(user_id, score, total, percent, module="тест"):
-    url = "https://script.google.com/macros/s/AKfycbyG1343QvshYjvX9wh6zX1aWgqRYwxTGWiHhcl1uaGDQeJfeD2oF9vRM5p_5ZSiqp0bLQ/exec"
+    url = "https://script.google.com/macros/s/AKfycbxycClJc_IUTAxXJVXqK03ZILvDtgo7ut6zTPKObKrpWcA0jBtlVijaT1-CskvL-QaS9Q/exec"
     data = {
         "user_id": user_id,
         "score": score,
