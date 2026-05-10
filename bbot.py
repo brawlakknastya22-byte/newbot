@@ -642,7 +642,7 @@ for event in longpoll.listen():
             # Очищаем текст от лишних пробелов и приводим к нижнему регистру
             clean_text = message_text.lower().strip()
             # Обработка ввода уникального кода
-            elif user_id in user_states and user_states[user_id].get("module") == "ask_code":
+            if user_id in user_states and user_states[user_id].get("module") == "ask_code":
                 user_code = message_text.upper().strip()
                 
                 import re
