@@ -620,15 +620,14 @@ def handle_test_answer(user_id, answer):
                 selected_idx = i
                 break
         
+        # Считаем правильные ответы, но НЕ отправляем сообщение "Верно/Неверно"
         if selected_idx == q['correct']:
             state["score"] = state.get("score", 0) + 1
-            send_message(user_id, "✅ Верно!")
-        else:
-            send_message(user_id, f"❌ Неверно. Правильный ответ: {q['options'][q['correct']]}")
         
         state["current_q"] = current + 1
         user_states[user_id] = state
-        time.sleep(2)
+        
+        # Сразу переходим к следующему вопросу (без паузы)
         send_test_question(user_id)
 
 # ==================================================
