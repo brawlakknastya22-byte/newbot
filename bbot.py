@@ -608,14 +608,17 @@ def send_test_question(user_id):
         user_states.pop(user_id, None)
 
 def handle_test_answer(user_id, answer):
-    print(f"🔍 handle_test_answer вызвана для {user_id}, ответ: {answer}")
+    print(f"🔍 [1] handle_test_answer ВЫЗВАНА для {user_id}, ответ: '{answer}'")
+    
     state = user_states.get(user_id, {})
+    print(f"🔍 [2] Состояние пользователя: {state}")
+    
     questions = state.get("questions", [])
     current = state.get("current_q", 0)
-    
-    print(f"🔍 Текущий вопрос: {current}, всего: {len(questions)}")
+    print(f"🔍 [3] Текущий вопрос: {current}, всего вопросов: {len(questions)}")
     
     if current < len(questions):
+        print(f"🔍 [4] Вопрос есть, обрабатываю ответ")
         q = questions[current]
         selected_idx = None
         for i, opt in enumerate(q['options']):
@@ -623,18 +626,22 @@ def handle_test_answer(user_id, answer):
                 selected_idx = i
                 break
         
-        # Считаем правильные ответы, но НЕ отправляем сообщение "Верно/Неверно"
+        print(f"🔍 [5] Выбранный индекс: {selected_idx}, правильный: {q['correct']}")
+        
         if selected_idx == q['correct']:
             state["score"] = state.get("score", 0) + 1
+            print(f"🔍 [6] Правильно! Новый счёт: {state['score']}")
+        else:
+            print(f"🔍 [6] Неправильно")
         
         state["current_q"] = current + 1
         user_states[user_id] = state
-
-        print(f"🔍 Переход к вопросу {current + 1}")
+        print(f"🔍 [7] Теперь current = {state['current_q']}, вызываю send_test_question")
+        
         time.sleep(1.5)
         send_test_question(user_id)
     else:
-        print(f"🔍 Тест должен был завершиться, но current = {current} >= {len(questions)}")
+        print(f"🔍 [8] ОШИБКА: current ({current}) >= {len(questions)}, тест не должен был сюда попасть")
         
 # ==================================================
 # ОСНОВНОЙ ЦИКЛ
@@ -653,6 +660,11 @@ for event in longpoll.listen():
             message_text = event.message['text'].lower().strip()
             
             print(f"📩 Сообщение от {user_id}: {message_text}")
+            if user_id in user_states:
+                module = user_states[user_id].get("module")
+                print(f"🔍 ТЕСТ: пользователь {user_id} в модуле '{module}', сообщение: '{message_text}'")
+            else:
+                print(f"🔍 ТЕСТ: пользователь {user_id} не в активном модуле")
             
             # Очищаем текст от лишних пробелов и приводим к нижнему регистру
             clean_text = message_text.lower().strip()
