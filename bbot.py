@@ -5,6 +5,7 @@ import random
 import json
 import time
 import requests
+import re
 # ==================================================
 # ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (настройки на хостинге)
 # ==================================================
@@ -373,17 +374,23 @@ def send_message(user_id, message, keyboard=None):
     vk.messages.send(**params)
 
 def save_result_to_sheet(user_id, score, total, percent, module="тест"):
-    url = "https://script.google.com/macros/s/AKfycbxycClJc_IUTAxXJVXqK03ZILvDtgo7ut6zTPKObKrpWcA0jBtlVijaT1-CskvL-QaS9Q/exec"
+    state = user_states.get(user_id, {})
+    user_code = state.get("user_code", "не указан")
+    
+    url = "https://script.google.com/macros/s/AKfycbxSVmGWZP9BP4L8UTFLLyALKZY_27Va0wzWggltGiXC4-SWOJYGvRNvydju9kqggB9P0A/exec"
+    
     data = {
         "user_id": user_id,
+        "user_code": user_code,
         "score": score,
         "total": total,
         "percent": percent,
         "module": module
     }
+    
     try:
         requests.post(url, json=data, timeout=5)
-        print(f"✅ Результат сохранён ({module}): {user_id} | {score}/{total} ({percent:.0f}%)")
+        print(f"✅ Результат сохранён ({module}): {user_code} | {score}/{total} ({percent:.0f}%)")
     except Exception as e:
         print(f"❌ Ошибка сохранения: {e}")
 def create_main_keyboard():
@@ -525,6 +532,21 @@ def handle_help(user_id):
     send_message(user_id, help_text, create_main_keyboard())
 
 def handle_test(user_id):
+    state = user_states.get(user_id, {})
+    
+    # Проверяем, вводил ли пользователь уже код
+    if "user_code" not in state:
+        user_states[user_id] = {"module": "ask_code", "next_action": "start_test"}
+        send_message(
+            user_id, 
+            "🔐 *Для прохождения теста введите ваш уникальный код.*\n\n"
+            "Код — это 3 заглавные буквы фамилии + 2 последние цифры телефона.\n"
+            "Пример: ИВА67, ПЕТ43, СОК78.\n\n"
+            "❗ Введите код точно так же, как во вводном опросе."
+        )
+        return
+    
+    # Если код уже есть — запускаем тест
     shuffled_questions = TEST_QUESTIONS.copy()
     random.shuffle(shuffled_questions)
     
@@ -532,7 +554,8 @@ def handle_test(user_id):
         "module": "test",
         "questions": shuffled_questions,
         "current_q": 0,
-        "score": 0
+        "score": 0,
+        "user_code": state["user_code"]
     }
     send_test_question(user_id)
 
@@ -618,6 +641,27 @@ for event in longpoll.listen():
             
             # Очищаем текст от лишних пробелов и приводим к нижнему регистру
             clean_text = message_text.lower().strip()
+            # Обработка ввода уникального кода
+            elif user_id in user_states and user_states[user_id].get("module") == "ask_code":
+                user_code = message_text.upper().strip()
+                
+                import re
+                if re.match(r'^[А-Я]{3}\d{2}$', user_code):
+                    user_states[user_id] = {"user_code": user_code}
+                    
+                    next_action = user_states[user_id].get("next_action")
+                    if next_action == "start_test":
+                        handle_test(user_id)
+                    else:
+                        send_message(user_id, "✅ Код сохранён! Теперь вы можете начать тест.", create_main_keyboard())
+                else:
+                    send_message(
+                        user_id,
+                        "❌ Неверный формат кода.\n\n"
+                        "Код должен состоять из 3 ЗАГЛАВНЫХ БУКВ и 2 ЦИФР.\n"
+                        "Пример: ИВА67, ПЕТ43, СОК78.\n\n"
+                        "Попробуйте ещё раз."
+                    )
 
             if "помощь" in clean_text or "help" in clean_text:
                 handle_help(user_id)
