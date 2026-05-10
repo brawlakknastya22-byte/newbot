@@ -3,7 +3,6 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 import os
 import random
 import json
-import random
 import time
 
 # ==================================================
@@ -627,7 +626,7 @@ def handle_test_answer(user_id, answer):
         state["current_q"] = current + 1
         user_states[user_id] = state
         
-        # Сразу переходим к следующему вопросу (без паузы)
+        time.sleep(1.5)
         send_test_question(user_id)
 
 # ==================================================
