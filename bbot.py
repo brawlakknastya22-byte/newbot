@@ -372,18 +372,18 @@ def send_message(user_id, message, keyboard=None):
     
     vk.messages.send(**params)
 
-def save_result_to_sheet(user_id, score, total, percent):
-    """Сохраняет результат теста в Google Таблицу"""
+def save_result_to_sheet(user_id, score, total, percent, module="тест"):
     url = "https://script.google.com/macros/s/AKfycbyG1343QvshYjvX9wh6zX1aWgqRYwxTGWiHhcl1uaGDQeJfeD2oF9vRM5p_5ZSiqp0bLQ/exec"
     data = {
         "user_id": user_id,
         "score": score,
         "total": total,
-        "percent": percent
+        "percent": percent,
+        "module": module
     }
     try:
         requests.post(url, json=data, timeout=5)
-        print(f"✅ Результат сохранён: {user_id} | {score}/{total} ({percent:.0f}%)")
+        print(f"✅ Результат сохранён ({module}): {user_id} | {score}/{total} ({percent:.0f}%)")
     except Exception as e:
         print(f"❌ Ошибка сохранения: {e}")
 def create_main_keyboard():
@@ -476,6 +476,9 @@ def send_next_fake_question(user_id):
             result += "💪 Стоит потренироваться! Внимательнее читай объяснения после ответов."
         
         send_message(user_id, result, create_main_keyboard())
+        
+        save_result_to_sheet(user_id, score, total, percent, module="проверка новостей")
+        
         user_states.pop(user_id, None)
 
 def handle_fake_answer(user_id, answer):
@@ -550,7 +553,7 @@ def send_test_question(user_id):
         result = f"🎉 *Тест завершён!*\n\nРезультат: {score} из {total} ({percent:.0f}%)"
         send_message(user_id, result, create_main_keyboard())
     
-        save_result_to_sheet(user_id, score, total, percent)
+        save_result_to_sheet(user_id, score, total, percent, module="тест")
     
         user_states.pop(user_id, None)
 
