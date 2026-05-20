@@ -7,7 +7,7 @@ import time
 import requests
 import re
 # ==================================================
-# ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (настройки на хостинге)
+# ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ
 # ==================================================
 ACCESS_TOKEN = os.environ.get("VK_TOKEN")
 GROUP_ID = int(os.environ.get("GROUP_ID", 0))
@@ -375,7 +375,6 @@ def send_message(user_id, message, keyboard=None):
     vk.messages.send(**params)
 
 def save_result_to_sheet(user_id, score, total, percent, module="тест"):
-    # Берём код из постоянного хранилища
     user_code = user_codes.get(user_id, "не указан")
     
     url = "https://script.google.com/macros/s/AKfycbxSVmGWZP9BP4L8UTFLLyALKZY_27Va0wzWggltGiXC4-SWOJYGvRNvydju9kqggB9P0A/exec"
@@ -441,13 +440,12 @@ def create_quiz_keyboard(options):
 # ==================================================
 
 def handle_fake_check(user_id):
-    # Перемешиваем список новостей
     shuffled_news = FAKE_NEWS_DB.copy()
     random.shuffle(shuffled_news)
     
     user_states[user_id] = {
         "module": "fake_check",
-        "news_list": shuffled_news,  # все новости в случайном порядке
+        "news_list": shuffled_news,  
         "current_idx": 0,
         "score": 0,
         "total": len(shuffled_news)
@@ -471,7 +469,6 @@ def send_next_fake_question(user_id):
             create_yes_no_keyboard()
         )
     else:
-        # Тест окончен, показываем результат
         score = state.get("score", 0)
         percent = (score / total) * 100
         result = f"🎉 *Тест завершён!*\n\nРезультат: {score} из {total} ({percent:.0f}%)\n"
@@ -495,23 +492,19 @@ def handle_fake_answer(user_id, answer):
     current_idx = state.get("current_idx", 0)
     score = state.get("score", 0)
     
-    # Проверяем ответ
     user_is_fake = "фейк" in answer.lower() or "❌" in answer
     is_correct = (user_is_fake == current_news.get("is_fake", False))
     
-    # Отправляем обратную связь
     if is_correct:
         send_message(user_id, f"✅ *Правильно!*\n\n{current_news.get('explanation', '')}")
         score += 1
     else:
         send_message(user_id, f"❌ *Неправильно!*\n\n{current_news.get('explanation', '')}")
     
-    # Переходим к следующей новости
     state["score"] = score
     state["current_idx"] = current_idx + 1
     user_states[user_id] = state
     
-    # Отправляем следующую новость или завершаем
     send_next_fake_question(user_id)
 
 def handle_law_case(user_id):
@@ -533,7 +526,7 @@ def handle_help(user_id):
     send_message(user_id, help_text, create_main_keyboard())
 
 def handle_test(user_id):
-    # Проверяем, есть ли код в постоянном хранилище
+    
     if user_id not in user_codes:
         user_states[user_id] = {"module": "ask_code", "next_action": "start_test"}
         send_message(
@@ -545,7 +538,7 @@ def handle_test(user_id):
         )
         return
     
-    # Если код уже есть — запускаем тест
+    
     shuffled_questions = TEST_QUESTIONS.copy()
     random.shuffle(shuffled_questions)
     
@@ -554,7 +547,7 @@ def handle_test(user_id):
         "questions": shuffled_questions,
         "current_q": 0,
         "score": 0,
-        "user_code": user_codes[user_id]   # берём код из постоянного хранилища
+        "user_code": user_codes[user_id]   
     }
     send_test_question(user_id)
     
@@ -663,8 +656,7 @@ for event in longpoll.listen():
                         "Пример: ИВА67, ПЕТ43, СОК78.\n\n"
                         "Попробуйте ещё раз."
                     )
-                continue  # Важно: пропускаем остальную обработку
-
+                continue
             # ========== ОСТАЛЬНЫЕ КОМАНДЫ ==========
             if "помощь" in clean_text or "help" in clean_text:
                 handle_help(user_id)
@@ -687,4 +679,3 @@ for event in longpoll.listen():
             elif user_id in user_states and user_states[user_id].get("module") == "fake_check":
                 handle_fake_answer(user_id, message_text)
             
-            # Если команда не распознана — бот молчит (ничего не отправляет)
